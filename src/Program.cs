@@ -18,6 +18,15 @@ namespace KosherLink
         [STAThread]
         static void Main(string[] args)
         {
+            // filter-certificate window: "--filter", "--filter NetFree" (pre-selected) or "--filter file.crt"
+            int fi = Array.IndexOf(args, "--filter");
+            if (fi >= 0)
+            {
+                Application.EnableVisualStyles();
+                FilterInstaller.Run(fi + 1 < args.Length ? args[fi + 1] : "");
+                return;
+            }
+
             bool created;
             using (var mutex = new Mutex(true, "KosherLinkPlay_SingleInstance", out created))
             {
@@ -222,6 +231,7 @@ namespace KosherLink
                 System.IO.Directory.CreateDirectory(Backup.Dir); Process.Start("explorer.exe", "\"" + Backup.Dir + "\"");
             });
             menu.Items.Add(backup);
+            menu.Items.Add("תעודת סינון אינטרנט...", null, (s, e) => Sta(() => FilterInstaller.Run("")));
             menu.Items.Add("אשף התקנה ורישום", null, (s, e) => ShowSetup());
             _autoStart = new ToolStripMenuItem("הפעל אוטומטית עם Windows", null, (s, e) =>
             {
@@ -297,6 +307,7 @@ namespace KosherLink
             if (!Emulator.WaitBoot(600)) throw new Exception("הטלפון הווירטואלי לא עלה");
             if (!wasRunning) Emulator.Tune(); else Emulator.LowerPriority();
             SetStatus("פועל", _iconOk);
+            Sta(FilterInstaller.OfferOnce); // asks once ever, only if Windows has a filter certificate
             DoUpdates(false);
         }
 
