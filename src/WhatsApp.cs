@@ -220,7 +220,7 @@ namespace KosherLink
             if (screen != null) Proc.Shell(screen);
             var psi = Proc.Psi(Paths.Scrcpy,
                 "-s " + Proc.Serial + " --no-audio --max-fps 30 --video-bit-rate 4M --stay-awake"
-                + " --window-title \"KosherLink Play - הטלפון הווירטואלי\"");
+                + " --window-title \"KosherLink Google - הטלפון הווירטואלי\"");
             psi.RedirectStandardOutput = true;
             psi.RedirectStandardError = true;
             psi.StandardOutputEncoding = psi.StandardErrorEncoding = System.Text.Encoding.UTF8;
@@ -285,9 +285,9 @@ namespace KosherLink
     /// </summary>
     static class AppUpdater
     {
-        public const string DefaultRepo = "KatzChaim/KosherLink-Play";
-        const string AssetName = "KosherLink-Play.exe";
-        const string SigAssetName = "KosherLink-Play.exe.sig";
+        public const string DefaultRepo = "KatzChaim/KosherLink-Google";
+        const string AssetName = "KosherLink-Google.exe";
+        const string SigAssetName = "KosherLink-Google.exe.sig";
 
         /// <summary>Public half of the developer's update-signing key (the private half is in %USERPROFILE%\.kosherlink).</summary>
         const string PublicKey = "<RSAKeyValue><Modulus>1N8YSJcMnvmY5ACHONCtw7WHLK1IJArR2maqYR9CLoFBmjqs2hEDA0w7Xobb/KnmJqerJfXDjl6RbjOWeEGca8yRrEag7MXGqsBWZXwCMSWPB8I50qSKr+NxHzL1BmYdzzbTYvXx+V0m8LVE5m1RAffHiLWquLlN5ZfhXuEMcM0AOjZJxNKesrtlVSWFwGuxHfA9uw4r+8K42UgyuD4UuHm0DMg/v+QfkTgICKd/adc3fLaUccEuwU1zVl8l39hD1N7MDEhCRfi99awi+2StuSHUKHw8id87xmhiAyape8h9mvQmAUGoKimSZQPQTliX7rXWU/1VSU6NQfqajQr7m/K2IjIWpoCBp/FCIhHSePOAyDyZhP3nssYaq/8cUQFrz1do/ykxMI2yDrQfPFYWXx3YPQcwFd8EMPfZCtLzA8/uWKZ2zsUl94Gq2rVOnapRBDDMMmix87eh/RcPoA8VhnriYQFT81EJ9b5NIF2pCQW2zN3K8qEl6lUed+xd6g8N</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>";
@@ -407,7 +407,7 @@ namespace KosherLink
     static class AutoStart
     {
         const string Key = @"Software\Microsoft\Windows\CurrentVersion\Run";
-        const string Name = "KosherLink-Play";
+        const string Name = "KosherLink-Google";
 
         public static bool Enabled
         {

@@ -21,6 +21,7 @@ namespace KosherLink
             if (File.Exists(Path.Combine(ExeDir, "portable.txt")))
                 Root = Path.Combine(ExeDir, "data");
             else
+                // (the folder keeps its first name, KosherLink-Play, so existing installs keep their phone and WhatsApp)
                 Root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "KosherLink-Play");
             Directory.CreateDirectory(Root);
         }
@@ -91,7 +92,7 @@ namespace KosherLink
         // Defaults chosen to be as light as possible while still running WhatsApp comfortably.
         public static int ApiLevel { get { return GetInt("ApiLevel", 30); } }
         // "default" = plain AOSP without Google services. ("aosp_atd" is smaller but does not draw app screens.)
-        public static string ImageTag { get { return Get("ImageTag", "google_apis_playstore"); } }
+        public static string ImageTag { get { return Get("ImageTag", "google_apis"); } }
         // RAM / cores come from the speed level; RamMb / Cores in config.ini still override them (advanced).
         public static int RamMb { get { return GetInt("RamMb", Speed.Current.RamMb); } }
         public static int Cores { get { return GetInt("Cores", Speed.Current.Cores); } }
@@ -237,7 +238,7 @@ namespace KosherLink
 
     static class Net
     {
-        public const string UserAgent = "KosherLink-Play/" + Program.Version;
+        public const string UserAgent = "KosherLink-Google/" + Program.Version;
 
         static Net()
         {

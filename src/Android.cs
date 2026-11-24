@@ -204,8 +204,10 @@ namespace KosherLink
             kv("image.sysdir.1", ImagePath(api, tag) + "/");
             kv("tag.id", tag);
             kv("target", "android-" + api);
-            kv("PlayStore.enabled", "true"); // Google Play edition: the store, Google sign-in and Google Drive restore
-            kv("tag.display", "Google Play");
+            // "Google APIs" image: Google account + Google Play services (what WhatsApp needs to restore from Google Drive),
+            // no Play Store. Unlike the Play Store image it allows root, so the filter certificate and Hebrew can be set.
+            kv("PlayStore.enabled", "false");
+            kv("tag.display", "Google APIs");
             // small screen = less to render
             kv("hw.lcd.width", "720");
             kv("hw.lcd.height", "1280");
@@ -312,9 +314,6 @@ namespace KosherLink
                     + " -gpu " + Speed.EffectiveGpu
                     + " -memory " + Config.RamMb
                     + " -cores " + Config.Cores
-                    // the Google Play image cannot be rooted, so language and time zone are handed in by the emulator
-                    + " -timezone " + Config.Get("TimeZone", "Asia/Jerusalem")
-                    + " -change-locale " + Config.Get("Locale", "he-IL")
                     + (fresh ? " -no-snapshot-load" : "");
                 // the emulator's own output goes to a log file (helps diagnose problems)
                 var psi = Proc.Psi(Paths.EmulatorExe, args);
@@ -364,6 +363,7 @@ namespace KosherLink
         {
             LowerPriority();
             ApplyLanguageAndTime();
+            HideExtraApps();
             foreach (var c in new[]
             {
                 "settings put global window_animation_scale 0",
@@ -386,13 +386,47 @@ namespace KosherLink
         /// </summary>
         static void ApplyLanguageAndTime()
         {
-            // Google Play edition: no root, so the emulator itself sets them at start (-change-locale, -timezone).
-            // Here we only report what the phone ended up with.
             string locale = Config.Get("Locale", "he-IL");
             string tz = Config.Get("TimeZone", "Asia/Jerusalem");
-            string gotLocale = Proc.Shell("getprop persist.sys.locale"), gotTz = Proc.Shell("getprop persist.sys.timezone");
-            if (gotLocale != locale || gotTz != tz)
-                Log.Write("שפה/אזור זמן בטלפון: " + gotLocale + " / " + gotTz + " (רצוי " + locale + " / " + tz + ")");
+            if (Proc.Shell("getprop persist.sys.locale") == locale && Proc.Shell("getprop persist.sys.timezone") == tz) return;
+
+            Log.Write("מגדיר שפה " + locale + " ואזור זמן " + tz + "...");
+            Proc.Root(); // the Google APIs image allows this; needed for system settings
+            Proc.Shell("setprop persist.sys.timezone " + tz);
+            Proc.Shell("setprop persist.sys.locale " + locale);
+            Proc.Shell("setprop ctl.restart zygote");
+            Thread.Sleep(5000);
+            var until = DateTime.Now.AddMinutes(3);
+            while (DateTime.Now < until && !(IsBooted && Proc.Shell("service check deviceidle").Contains("found")))
+                Thread.Sleep(2000);
+            Thread.Sleep(3000);
+        }
+
+        /// <summary>
+        /// The Google APIs phone comes with YouTube, Chrome, Maps, Gmail etc. They are switched off (not deleted), so
+        /// only WhatsApp, Settings, Contacts and Files are left. Google Play services stay: the account and the
+        /// Google Drive restore need them.
+        /// </summary>
+        static readonly string[] ExtraApps =
+        {
+            "com.android.chrome", "com.android.dialer", "com.google.android.apps.docs", "com.google.android.apps.maps",
+            "com.google.android.apps.messaging", "com.google.android.apps.photos", "com.google.android.apps.youtube.music",
+            "com.google.android.calendar", "com.google.android.deskclock", "com.google.android.gm",
+            "com.google.android.googlequicksearchbox", "com.google.android.videos", "com.google.android.youtube",
+        };
+
+        static void HideExtraApps()
+        {
+            var enabled = new HashSet<string>();
+            foreach (var line in Proc.Shell("pm list packages -e").Split('\n')) enabled.Add(line.Trim());
+            int n = 0;
+            foreach (var p in ExtraApps)
+                if (enabled.Contains("package:" + p))
+                {
+                    Proc.Shell("pm disable-user --user 0 " + p);
+                    n++;
+                }
+            if (n > 0) Log.Write("הוסתרו " + n + " אפליקציות של Google שלא נחוצות (YouTube, Chrome ועוד)");
         }
 
         public static void ScreenOff() { Proc.Shell("input keyevent 223"); }

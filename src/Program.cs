@@ -13,7 +13,7 @@ namespace KosherLink
     static class Program
     {
         public const string Version = "1.0.9";
-        public const string AppName = "KosherLink Play";
+        public const string AppName = "KosherLink Google";
 
         [STAThread]
         static void Main(string[] args)
@@ -303,11 +303,25 @@ namespace KosherLink
         void DoUpdates(bool force)
         {
             if (_exiting) return;
-            // Google Play edition: WhatsApp is installed from Google Play and Google Play keeps it updated.
-            // Here only KosherLink Play itself is updated.
+            // no Play Store in this phone: WhatsApp comes from whatsapp.com, like in the regular edition
+            if (Emulator.IsRunning && Emulator.IsBooted && (force || UpdatePolicy.Due("WaLastCheck", true)))
+            {
+                SetStatus("בודק עדכון לוואטסאפ...", _iconBusy);
+                bool updated = WhatsAppAndroid.Update(false, null,
+                    UpdatePolicy.Ask ? () => Confirm("יש גרסה חדשה של וואטסאפ. לעדכן עכשיו?\n(העדכון לוקח כדקה, ובזמן הזה וואטסאפ במחשב עלול להתנתק לרגע)") : (Func<bool>)null);
+                if (updated) Notify("וואטסאפ עודכן לגרסה " + WhatsAppAndroid.InstalledVersion);
+                SetStatus("פועל", _iconOk);
+            }
             if (force || UpdatePolicy.Due("AppLastCheck", false)) CheckAppUpdate();
-            if (force) Notify("הבדיקה הסתיימה. (וואטסאפ מתעדכן דרך Google Play)");
+            if (force) Notify("הבדיקה הסתיימה.");
+            else if (UpdatePolicy.Mode == "manual" && !_staleWarned && UpdatePolicy.DaysSince("WaLastCheck") > 30)
+            {
+                _staleWarned = true;
+                Notify("לא נבדקו עדכונים כבר יותר מחודש. כדי שוואטסאפ ימשיך לעבוד, בחר \"בדוק עדכונים עכשיו\".");
+            }
         }
+
+        bool _staleWarned;
 
         /// <summary>Runs work that shows dialogs (file picker) on its own STA thread, so the tray stays responsive.</summary>
         static void Sta(Action a)
@@ -368,7 +382,7 @@ namespace KosherLink
                 dlg.Description = "בחר תיקייה לגיבויים. כדי לגבות לענן, בחר תיקייה בתוך Google Drive או OneDrive.";
                 dlg.SelectedPath = Backup.Dir;
                 if (dlg.ShowDialog() != DialogResult.OK) return;
-                Backup.Dir = System.IO.Path.Combine(dlg.SelectedPath, "KosherLink Play Backup");
+                Backup.Dir = System.IO.Path.Combine(dlg.SelectedPath, "KosherLink Google Backup");
                 Config.Set("BackupLast", ""); // back up to the new place soon
                 Notify("הגיבויים יישמרו ב: " + Backup.Dir);
             }

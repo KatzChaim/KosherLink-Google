@@ -1,9 +1,9 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-[assembly: AssemblyTitle("KosherLink Play")]
+[assembly: AssemblyTitle("KosherLink Google")]
 [assembly: AssemblyDescription("WhatsApp on a Windows PC for users of call-only (kosher) phones, using the official WhatsApp apps")]
-[assembly: AssemblyProduct("KosherLink Play")]
+[assembly: AssemblyProduct("KosherLink Google")]
 [assembly: AssemblyCompany("KosherLink")]
 [assembly: AssemblyCopyright("Copyright (c) 2026 KosherLink")]
 [assembly: AssemblyVersion(KosherLink.Program.Version)]

@@ -1,4 +1,4 @@
-# Builds KosherLink-Play.exe using the C# compiler that ships with Windows (.NET Framework 4.8) - nothing to install.
+# Builds KosherLink-Google.exe using the C# compiler that ships with Windows (.NET Framework 4.8) - nothing to install.
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
 $fw = "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319"
@@ -23,7 +23,7 @@ $refs = 'System.dll','System.Core.dll','System.Drawing.dll','System.Windows.Form
         ForEach-Object { "/r:$(Join-Path $fw $_)" }
 
 & $csc /nologo /target:winexe /optimize+ /codepage:65001 /platform:anycpu "/win32icon:$ico" "/win32manifest:$(Join-Path $root 'src\app.manifest')" `
-    "/out:$(Join-Path $out 'KosherLink-Play.exe')" @refs (Get-ChildItem (Join-Path $root 'src') -Filter *.cs).FullName
+    "/out:$(Join-Path $out 'KosherLink-Google.exe')" @refs (Get-ChildItem (Join-Path $root 'src') -Filter *.cs).FullName
 if ($LASTEXITCODE -ne 0) { throw "Build failed" }
 Remove-Item $ico
-Write-Host "Built: $(Join-Path $out 'KosherLink-Play.exe')"
+Write-Host "Built: $(Join-Path $out 'KosherLink-Google.exe')"

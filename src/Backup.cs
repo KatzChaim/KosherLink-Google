@@ -19,7 +19,7 @@ namespace KosherLink
             get
             {
                 return Config.Get("BackupDir",
-                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "KosherLink Play Backup"));
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "KosherLink Google Backup"));
             }
             set { Config.Set("BackupDir", value); }
         }
