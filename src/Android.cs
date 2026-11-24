@@ -204,7 +204,8 @@ namespace KosherLink
             kv("image.sysdir.1", ImagePath(api, tag) + "/");
             kv("tag.id", tag);
             kv("target", "android-" + api);
-            kv("PlayStore.enabled", "false");
+            kv("PlayStore.enabled", "true"); // Google Play edition: the store, Google sign-in and Google Drive restore
+            kv("tag.display", "Google Play");
             // small screen = less to render
             kv("hw.lcd.width", "720");
             kv("hw.lcd.height", "1280");
@@ -311,6 +312,9 @@ namespace KosherLink
                     + " -gpu " + Speed.EffectiveGpu
                     + " -memory " + Config.RamMb
                     + " -cores " + Config.Cores
+                    // the Google Play image cannot be rooted, so language and time zone are handed in by the emulator
+                    + " -timezone " + Config.Get("TimeZone", "Asia/Jerusalem")
+                    + " -change-locale " + Config.Get("Locale", "he-IL")
                     + (fresh ? " -no-snapshot-load" : "");
                 // the emulator's own output goes to a log file (helps diagnose problems)
                 var psi = Proc.Psi(Paths.EmulatorExe, args);
@@ -382,22 +386,13 @@ namespace KosherLink
         /// </summary>
         static void ApplyLanguageAndTime()
         {
+            // Google Play edition: no root, so the emulator itself sets them at start (-change-locale, -timezone).
+            // Here we only report what the phone ended up with.
             string locale = Config.Get("Locale", "he-IL");
             string tz = Config.Get("TimeZone", "Asia/Jerusalem");
-            if (Proc.Shell("getprop persist.sys.locale") == locale && Proc.Shell("getprop persist.sys.timezone") == tz) return;
-
-            Log.Write("מגדיר שפה " + locale + " ואזור זמן " + tz + "...");
-            Proc.Adb("-s " + Proc.Serial + " root", 30000); // the plain AOSP image allows this; needed for system settings
-            Thread.Sleep(3000);
-            Proc.Adb("-s " + Proc.Serial + " wait-for-device", 60000);
-            Proc.Shell("setprop persist.sys.timezone " + tz);
-            Proc.Shell("setprop persist.sys.locale " + locale);
-            Proc.Shell("setprop ctl.restart zygote");
-            Thread.Sleep(5000);
-            var until = DateTime.Now.AddMinutes(3);
-            while (DateTime.Now < until && !(IsBooted && Proc.Shell("service check deviceidle").Contains("found")))
-                Thread.Sleep(2000);
-            Thread.Sleep(3000);
+            string gotLocale = Proc.Shell("getprop persist.sys.locale"), gotTz = Proc.Shell("getprop persist.sys.timezone");
+            if (gotLocale != locale || gotTz != tz)
+                Log.Write("שפה/אזור זמן בטלפון: " + gotLocale + " / " + gotTz + " (רצוי " + locale + " / " + tz + ")");
         }
 
         public static void ScreenOff() { Proc.Shell("input keyevent 223"); }
