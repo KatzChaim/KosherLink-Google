@@ -88,6 +88,7 @@ namespace KosherLink
             {
                 foreach (var f in ListFiles(WaDir + "/Media"))
                 {
+                    if (f.Path.EndsWith("/.nomedia")) continue; // empty marker files that WhatsApp recreates by itself
                     string rel = f.Path.Substring((WaDir + "/Media/").Length).Replace('/', '\\');
                     string local = Path.Combine(MediaDir, rel);
                     var fi = new FileInfo(local);
