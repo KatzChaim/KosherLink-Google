@@ -12,7 +12,7 @@ namespace KosherLink
 {
     static class Program
     {
-        public const string Version = "1.0.10";
+        public const string Version = "1.0.11";
         public const string AppName = "KosherLink Google";
 
         [STAThread]
