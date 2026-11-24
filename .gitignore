@@ -1,0 +1,12 @@
+# build output (published as GitHub Releases instead)
+dist/
+release/*.zip
+*.exe
+*.old
+*.new
+# local runtime data
+data/
+portable.txt
+*.log
+*.sig
+update-signing-key*
