@@ -116,9 +116,11 @@ namespace KosherLink
                 return BitConverter.ToString(sha.ComputeHash(der)).Replace("-", "").ToLowerInvariant();
         }
 
+        public const string LaunchCommand = "monkey -p " + Package + " -c android.intent.category.LAUNCHER 1";
+
         public static void Launch()
         {
-            Proc.Shell("monkey -p " + Package + " -c android.intent.category.LAUNCHER 1");
+            Proc.Shell(LaunchCommand);
         }
 
         public static bool DueForCheck(TimeSpan every)
@@ -204,11 +206,18 @@ namespace KosherLink
 
         public static bool IsOpen { get { return _proc != null && !_proc.HasExited; } }
 
-        public static void Show()
+        /// <param name="screen">A phone command that opens the screen to show (settings, store...); null = WhatsApp.</param>
+        public static void Show(string screen = null)
         {
-            if (IsOpen) { BringToFront(); return; }
+            if (screen == null && WhatsAppAndroid.IsInstalled) screen = WhatsAppAndroid.LaunchCommand;
+            if (IsOpen)
+            {
+                if (screen != null) Proc.Shell(screen);
+                BringToFront();
+                return;
+            }
             Emulator.ScreenOn();
-            WhatsAppAndroid.Launch();
+            if (screen != null) Proc.Shell(screen);
             var psi = Proc.Psi(Paths.Scrcpy,
                 "-s " + Proc.Serial + " --no-audio --max-fps 30 --video-bit-rate 4M --stay-awake"
                 + " --window-title \"KosherLink Play - הטלפון הווירטואלי\"");

@@ -303,24 +303,11 @@ namespace KosherLink
         void DoUpdates(bool force)
         {
             if (_exiting) return;
-            if (Emulator.IsRunning && Emulator.IsBooted && (force || UpdatePolicy.Due("WaLastCheck", true)))
-            {
-                SetStatus("בודק עדכון לוואטסאפ...", _iconBusy);
-                bool updated = WhatsAppAndroid.Update(false, null,
-                    UpdatePolicy.Ask ? () => Confirm("יש גרסה חדשה של וואטסאפ. לעדכן עכשיו?\n(העדכון לוקח כדקה, ובזמן הזה וואטסאפ במחשב עלול להתנתק לרגע)") : (Func<bool>)null);
-                if (updated) Notify("וואטסאפ עודכן לגרסה " + WhatsAppAndroid.InstalledVersion);
-                SetStatus("פועל", _iconOk);
-            }
+            // Google Play edition: WhatsApp is installed from Google Play and Google Play keeps it updated.
+            // Here only KosherLink Play itself is updated.
             if (force || UpdatePolicy.Due("AppLastCheck", false)) CheckAppUpdate();
-            if (force) Notify("הבדיקה הסתיימה.");
-            else if (UpdatePolicy.Mode == "manual" && !_staleWarned && UpdatePolicy.DaysSince("WaLastCheck") > 30)
-            {
-                _staleWarned = true;
-                Notify("לא נבדקו עדכונים כבר יותר מחודש. כדי שוואטסאפ ימשיך לעבוד, בחר \"בדוק עדכונים עכשיו\".");
-            }
+            if (force) Notify("הבדיקה הסתיימה. (וואטסאפ מתעדכן דרך Google Play)");
         }
-
-        bool _staleWarned;
 
         /// <summary>Runs work that shows dialogs (file picker) on its own STA thread, so the tray stays responsive.</summary>
         static void Sta(Action a)
