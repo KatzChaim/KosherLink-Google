@@ -1,4 +1,4 @@
-﻿# מפרסם גרסה חדשה של KosherLink ב־GitHub. כל ההתקנות מתעדכנות לבד תוך יום.
+﻿# מפרסם גרסה חדשה של KosherLink Google ב־GitHub. כל ההתקנות מתעדכנות לבד תוך יום.
 #
 #   .\publish.ps1                          מעלה את המספר האחרון בגרסה ב־1 (למשל 1.0.3 ל־1.0.4)
 #   .\publish.ps1 -Version 1.1.0           קובע מספר גרסה מסוים
@@ -13,9 +13,9 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
-$repo = 'KatzChaim/KosherLink'
+$repo = 'KatzChaim/KosherLink-Google'
 $programCs = 'src\Program.cs'
-$exe = 'dist\KosherLink.exe'
+$exe = 'dist\KosherLink-Google.exe'
 
 function Step($t) { Write-Host "`n== $t" -ForegroundColor Cyan }
 function Fail($t) { Write-Host "שגיאה: $t" -ForegroundColor Red; exit 1 }
@@ -72,7 +72,7 @@ Step "בונה"
 if (Test-Path $exe) {
     # אם התוכנה פועלת מתוך dist, אי אפשר לדרוס את הקובץ, אבל אפשר לשנות לו שם
     try { [IO.File]::Open((Resolve-Path $exe), 'Open', 'ReadWrite', 'None').Close() }
-    catch { Rename-Item $exe ("KosherLink.running-" + (Get-Date -Format 'yyyyMMddHHmmss') + ".exe") }
+    catch { Rename-Item $exe ("KosherLink-Google.running-" + (Get-Date -Format 'yyyyMMddHHmmss') + ".exe") }
 }
 & powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 if ($LASTEXITCODE -ne 0) { Fail "הבנייה נכשלה" }
@@ -86,7 +86,7 @@ $sigFile = "$exe.sig"
 $rsa = New-Object Security.Cryptography.RSACryptoServiceProvider
 $rsa.FromXmlString([IO.File]::ReadAllText($keyFile))
 $sig = $rsa.SignData([IO.File]::ReadAllBytes((Resolve-Path $exe)), [Security.Cryptography.SHA256]::Create())
-[IO.File]::WriteAllText((Join-Path (Resolve-Path 'dist') 'KosherLink.exe.sig'), [Convert]::ToBase64String($sig))
+[IO.File]::WriteAllText((Join-Path (Resolve-Path 'dist') 'KosherLink-Google.exe.sig'), [Convert]::ToBase64String($sig))
 $check = New-Object Security.Cryptography.RSACryptoServiceProvider
 $check.FromXmlString($publicXml)
 if (-not $check.VerifyData([IO.File]::ReadAllBytes((Resolve-Path $exe)), [Security.Cryptography.SHA256]::Create(), $sig)) { Fail "בדיקת החתימה נכשלה" }
@@ -99,24 +99,18 @@ if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force }
 New-Item -ItemType Directory $tmp | Out-Null
 Copy-Item $exe $tmp
 Copy-Item 'release\הוראות.txt' $tmp
-$zip = 'release\KosherLink.zip'
+$zip = 'release\KosherLink-Google.zip'
 if (Test-Path $zip) { Remove-Item $zip }
 Compress-Archive -Path "$tmp\*" -DestinationPath $zip
 Remove-Item $tmp -Recurse -Force
 
-# מתקין תעודת הסינון: עותק של התוכנה בשם KosherLink-Filter.exe פותח רק את חלון הבחירה של תעודת הסינון
-$filterDir = 'dist\filters'
-if (Test-Path $filterDir) { Remove-Item $filterDir -Recurse -Force }
-New-Item -ItemType Directory $filterDir | Out-Null
-$filterFile = "$filterDir\KosherLink-Filter.exe"
-Copy-Item $exe $filterFile
 
 # ---- 5. GitHub: commit, תגית, push
 # מכאן והלאה רק תוכנות חיצוניות, שכותבות התקדמות ל־stderr. הכישלונות נבדקים לפי קוד היציאה
 $ErrorActionPreference = 'Continue'
 Step "מעלה ל־GitHub"
 Invoke-Git add -A
-$msg = "KosherLink $Version"
+$msg = "KosherLink Google $Version"
 if ($Notes) { $msg += "`n`n$Notes" }
 Invoke-Git commit -q -m $msg
 Invoke-Git tag "v$Version"
@@ -124,23 +118,23 @@ Invoke-Git push -q origin main "v$Version"
 
 # ---- 6. Release (ממנו כל ההתקנות מתעדכנות)
 Step "מפרסם Release"
-$body = "## KosherLink $Version`n`n"
+$body = "## KosherLink Google $Version`n`n"
 if ($Notes) { $body += "$Notes`n`n" }
-$body += "**להורדה:** ``KosherLink.exe``, או ``KosherLink.zip`` שכולל גם קובץ הוראות. מי שהתוכנה כבר מותקנת אצלו יקבל את העדכון לבד, תוך יום.`n`n"
-$body += "**תעודת סינון אינטרנט:** מי שגולש דרך סינון (נטפרי, נטספארק, רימון, אתרוג ועוד) מוריד ומפעיל את ``KosherLink-Filter.exe``, בוחר את הסינון שלו ולוחץ ""התקן"". אותו חלון נמצא גם בתוכנה עצמה. פרטים ב־[README](https://github.com/$repo#סינון-אינטרנט).`n`n"
-$body += "SHA-256 של ``KosherLink.exe``: ``$hash``"
+$body += "**להורדה:** ``KosherLink-Google.exe``, או ``KosherLink-Google.zip`` שכולל גם קובץ הוראות. מי שהתוכנה כבר מותקנת אצלו יקבל את העדכון לבד, תוך יום.`n`n"
+$body += "**תעודת סינון אינטרנט:** מי שגולש דרך סינון מתקין את התעודה מתוך האשף (שלב ב׳), לפני הכניסה לחשבון Google. פרטים ב־[README](https://github.com/$repo#סינון-אינטרנט).`n`n"
+$body += "SHA-256 של ``KosherLink-Google.exe``: ``$hash``"
 $notesFile = Join-Path $env:TEMP "kosherlink-notes.md"
 [IO.File]::WriteAllText($notesFile, $body, (New-Object Text.UTF8Encoding $false))
-& gh.exe release create "v$Version" $exe $sigFile $zip $filterFile --repo $repo --title "KosherLink $Version" --notes-file $notesFile --verify-tag
+& gh.exe release create "v$Version" $exe $sigFile $zip --repo $repo --title "KosherLink Google $Version" --notes-file $notesFile --verify-tag
 if ($LASTEXITCODE -ne 0) { Fail "יצירת ה־Release נכשלה (הקוד כבר הועלה, אפשר להריץ שוב רק את gh release create)" }
 Remove-Item $notesFile
 
 # ---- 7. אימות: מה שההתקנות יראו
 # (בלי --jq: ב־PowerShell 5.1 גרשיים בתוך ארגומנט לא מגיעים לתוכנה החיצונית)
 $latest = (& gh.exe api "repos/$repo/releases/latest") -join "`n" | ConvertFrom-Json
-$digest = ($latest.assets | Where-Object { $_.name -eq 'KosherLink.exe' }).digest
+$digest = ($latest.assets | Where-Object { $_.name -eq 'KosherLink-Google.exe' }).digest
 if ($latest.tag_name -ne "v$Version") { Fail "ב־GitHub הגרסה האחרונה היא $($latest.tag_name) ולא v$Version" }
 if ($digest -ne "sha256:$($hash.ToLower())") { Fail "ב־GitHub הקובץ האחרון לא תואם ($digest)" }
-if (-not ($latest.assets | Where-Object { $_.name -eq 'KosherLink.exe.sig' })) { Fail "קובץ החתימה לא הועלה ל־GitHub" }
+if (-not ($latest.assets | Where-Object { $_.name -eq 'KosherLink-Google.exe.sig' })) { Fail "קובץ החתימה לא הועלה ל־GitHub" }
 Write-Host "`nגרסה $Version פורסמה: https://github.com/$repo/releases/tag/v$Version" -ForegroundColor Green
 Write-Host "כל ההתקנות יתעדכנו לבד תוך יום. כדי לעדכן מיד: קליק ימני על הסמל ← בדוק עדכונים עכשיו."
