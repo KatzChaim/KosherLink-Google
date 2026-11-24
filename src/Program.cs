@@ -131,6 +131,13 @@ namespace KosherLink
             set { Config.SetBool("UpdateAsk", value); }
         }
 
+        /// <summary>Update WhatsApp at once when it says its version expired (or is about to), whatever the schedule. On by default.</summary>
+        public static bool OnExpiry
+        {
+            get { return Config.Get("UpdateOnExpiry", "1") == "1"; }
+            set { Config.SetBool("UpdateOnExpiry", value); }
+        }
+
         /// <summary>Interval between checks, or null for manual only. In daily mode WhatsApp is checked twice a day.</summary>
         static TimeSpan? Every(bool whatsapp)
         {
@@ -200,10 +207,13 @@ namespace KosherLink
             upd.DropDownItems.Add(new ToolStripSeparator());
             var ask = new ToolStripMenuItem("שאל אותי לפני התקנת עדכון", null, (s, e) => UpdatePolicy.Ask = !UpdatePolicy.Ask);
             upd.DropDownItems.Add(ask);
+            var expiry = new ToolStripMenuItem("עדכן מיד כשוואטסאפ דורש עדכון (מומלץ)", null, (s, e) => UpdatePolicy.OnExpiry = !UpdatePolicy.OnExpiry);
+            upd.DropDownItems.Add(expiry);
             upd.DropDown.Opening += (s, e) =>
             {
                 for (int i = 0; i < modeItems.Length; i++) modeItems[i].Checked = UpdatePolicy.Modes[i] == UpdatePolicy.Mode;
                 ask.Checked = UpdatePolicy.Ask;
+                expiry.Checked = UpdatePolicy.OnExpiry;
             };
             menu.Items.Add(upd);
             var speed = new ToolStripMenuItem("מהירות הטלפון");
@@ -334,6 +344,40 @@ namespace KosherLink
 
         bool _staleWarned;
 
+        DateTime _lastExpiryLook = DateTime.MinValue, _lastExpiryFix = DateTime.MinValue;
+
+        /// <summary>Safety net: WhatsApp blocks itself when its version expires, and says so on its screen. Look at the screen
+        /// (WhatsApp usually runs in the background, so open it every few hours) and update at once, even in
+        /// weekly, monthly or manual mode. Called from the 2-minute watchdog.</summary>
+        void CheckExpiry()
+        {
+            if (_exiting || !UpdatePolicy.OnExpiry || !Emulator.IsBooted || !WhatsAppAndroid.IsInstalled) return;
+            bool viewer = PhoneViewer.IsOpen;
+            bool expired;
+            if (!viewer && DateTime.UtcNow - _lastExpiryLook > TimeSpan.FromHours(6))
+            {
+                _lastExpiryLook = DateTime.UtcNow;
+                Emulator.ScreenOn();
+                WhatsAppAndroid.Launch();
+                Thread.Sleep(10000);
+                expired = WhatsAppAndroid.ShowsExpiry();
+                if (!PhoneViewer.IsOpen) Emulator.ScreenOff();
+            }
+            else expired = viewer && WhatsAppAndroid.ShowsExpiry();
+            if (!expired || DateTime.UtcNow - _lastExpiryFix < TimeSpan.FromHours(1)) return;
+
+            _lastExpiryFix = DateTime.UtcNow;
+            Log.Write("וואטסאפ מבקש עדכון גרסה – מעדכן עכשיו");
+            SetStatus("וואטסאפ דורש עדכון – מעדכן...", _iconBusy);
+            if (WhatsAppAndroid.Update(false, null))
+            {
+                Notify("וואטסאפ דרש עדכון, ועודכן לגרסה " + WhatsAppAndroid.InstalledVersion);
+                if (PhoneViewer.IsOpen) WhatsAppAndroid.Launch();
+            }
+            else Notify("וואטסאפ מבקש עדכון, אבל באתר של וואטסאפ עוד אין גרסה חדשה יותר. ננסה שוב בעוד שעה.");
+            SetStatus("פועל", _iconOk);
+        }
+
         /// <summary>Runs work that shows dialogs (file picker) on its own STA thread, so the tray stays responsive.</summary>
         static void Sta(Action a)
         {
@@ -377,6 +421,7 @@ namespace KosherLink
                 {
                     Emulator.LowerPriority();
                     DoUpdates(false);
+                    CheckExpiry();
                     if (Backup.Due && Emulator.IsBooted)
                     {
                         try { Backup.Run(); }

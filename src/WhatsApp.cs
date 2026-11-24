@@ -118,6 +118,14 @@ namespace KosherLink
 
         public const string LaunchCommand = "monkey -p " + Package + " -c android.intent.category.LAUNCHER 1";
 
+        /// <summary>True when WhatsApp shows its "this version expired" screen, or its early warning that the
+        /// version is about to expire. Both are dialogs, listed by name in the top screen's fragments.</summary>
+        public static bool ShowsExpiry()
+        {
+            string top = Proc.Shell("dumpsys activity top");
+            return top.Contains("SoftwareExpiredDialogFragment") || top.Contains("SoftwareAboutToExpireDialogFragment");
+        }
+
         public static void Launch()
         {
             Proc.Shell(LaunchCommand);
